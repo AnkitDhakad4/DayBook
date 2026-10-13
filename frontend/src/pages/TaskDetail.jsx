@@ -1,0 +1,36 @@
+import { useEffect, useState } from 'react';
+import { ArrowLeft, CalendarDays, Check, Plus, Trash2 } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTaskStore } from '../store/useTaskStore.js';
+import ProgressBar from '../components/ProgressBar.jsx';
+import Modal from '../components/Modal.jsx';
+import TaskForm from '../components/TaskForm.jsx';
+
+const selectClass='rounded-lg border border-border bg-surface px-3 py-2.5 text-sm';
+
+const TaskDetail = () => {
+  const {id}=useParams();const navigate=useNavigate();const task=useTaskStore((state)=>state.currentTask);const isLoading=useTaskStore((state)=>state.isLoading);const fetchTask=useTaskStore((state)=>state.fetchTask);const updateTask=useTaskStore((state)=>state.updateTask);const deleteTask=useTaskStore((state)=>state.deleteTask);const addSubtask=useTaskStore((state)=>state.addSubtask);const toggleSubtask=useTaskStore((state)=>state.toggleSubtask);const deleteSubtask=useTaskStore((state)=>state.deleteSubtask);
+  const [editing,setEditing]=useState(false);const [newSubtask,setNewSubtask]=useState('');const [isAdding,setIsAdding]=useState(false);const [loadFailed,setLoadFailed]=useState(false);
+  useEffect(()=>{setLoadFailed(false);fetchTask(id).catch(()=>setLoadFailed(true));},[id,fetchTask]);
+  if(isLoading)return <div className="animate-pulse"><div className="h-5 w-24 rounded bg-surface-muted"/><div className="mt-8 h-12 w-1/2 rounded bg-surface-muted"/><div className="mt-5 h-64 rounded-xl bg-surface"/></div>;
+  if(loadFailed||!task)return <div className="rounded-xl border border-border bg-surface p-8 text-center"><h1 className="font-heading text-xl font-bold">We couldn’t find that task</h1><p className="mt-2 text-sm text-muted">It may have been removed, or there was a problem loading it.</p><Link to="/tasks" className="mt-4 inline-block text-sm font-semibold text-accent hover:underline">Back to tasks</Link></div>;
+  const remove=async()=>{if(window.confirm('Delete this task? This cannot be undone.')){try{await deleteTask(id);navigate('/tasks');}catch{}}};
+  const add=async(event)=>{event.preventDefault();if(!newSubtask.trim())return;setIsAdding(true);try{await addSubtask(id,newSubtask.trim());setNewSubtask('');}catch{}finally{setIsAdding(false);}};
+  const change=async(field,value)=>{try{await updateTask(id,{[field]:value});}catch{}};
+  const subtasks=task.subtasks||[];const overdue=task.due_date&&task.due_date<new Date().toISOString().slice(0,10)&&task.status!=='done';
+  return <div className="mx-auto max-w-4xl space-y-6"><Link to="/tasks" className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-accent"><ArrowLeft size={16}/>Back to tasks</Link>
+    <section className="rounded-xl border border-border bg-surface p-5 sm:p-8"><div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${task.status==='done'?'bg-success-soft text-success':task.status==='in_progress'?'bg-warning-soft text-warning':'bg-surface-muted text-muted'}`}>{task.status==='todo'?'To do':task.status==='in_progress'?'In progress':'Done'}</span><span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold capitalize text-accent">{task.priority} priority</span></div><h1 className="mt-4 break-words font-heading text-2xl font-bold sm:text-3xl">{task.title}</h1></div><div className="flex gap-2"><button onClick={()=>setEditing(true)} className="rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-surface-muted">Edit</button><button onClick={remove} aria-label="Delete task" className="rounded-lg border border-border p-2 text-danger hover:bg-danger-soft"><Trash2 size={17}/></button></div></div>
+      {task.description&&<p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-muted">{task.description}</p>}
+      <div className="mt-7 grid gap-5 border-y border-border py-5 sm:grid-cols-2"><label className="text-xs font-semibold uppercase tracking-wide text-muted">Status<select value={task.status} onChange={(e)=>change('status',e.target.value)} className={`${selectClass} mt-2 block w-full normal-case`}><option value="todo">To do</option><option value="in_progress">In progress</option><option value="done">Done</option></select></label><label className="text-xs font-semibold uppercase tracking-wide text-muted">Priority<select value={task.priority} onChange={(e)=>change('priority',e.target.value)} className={`${selectClass} mt-2 block w-full normal-case`}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label></div>
+      <div className="mt-6"><div className="mb-3 flex items-center justify-between"><span className="text-sm font-semibold">Progress</span><span className="text-xs text-muted">{subtasks.filter((item)=>item.is_completed).length} of {subtasks.length} steps complete</span></div><ProgressBar value={task.progress||0} large/></div>
+      {task.due_date&&<p className={`mt-5 flex items-center gap-2 text-sm ${overdue?'text-danger':'text-muted'}`}><CalendarDays size={16}/>{overdue?'Overdue · ':''}Due {new Date(`${task.due_date}T00:00:00`).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}</p>}
+    </section>
+    <section className="rounded-xl border border-border bg-surface p-5 sm:p-8"><div><h2 className="font-heading text-lg font-bold">Small steps</h2><p className="mt-1 text-sm text-muted">Break this task into a few doable pieces.</p></div>
+      <div className="mt-5 space-y-2">{subtasks.map((item)=><div key={item.id} className="group flex items-center gap-3 rounded-lg border border-border px-3 py-3"><button onClick={()=>toggleSubtask(id,item.id,!item.is_completed)} aria-label={item.is_completed?'Mark incomplete':'Mark complete'} className={`grid size-5 shrink-0 place-items-center rounded border ${item.is_completed?'border-accent bg-accent text-white':'border-border hover:border-accent'}`}>{item.is_completed&&<Check size={13}/>}</button><span className={`min-w-0 flex-1 text-sm ${item.is_completed?'text-muted line-through':''}`}>{item.title}</span><button onClick={()=>deleteSubtask(id,item.id)} aria-label={`Delete ${item.title}`} className="rounded p-1.5 text-muted opacity-60 hover:bg-danger-soft hover:text-danger"><Trash2 size={15}/></button></div>)}{!subtasks.length&&<p className="rounded-lg bg-page px-4 py-5 text-center text-sm text-muted">No steps yet. Start with one small piece.</p>}</div>
+      <form onSubmit={add} className="mt-4 flex gap-2"><input value={newSubtask} onChange={(e)=>setNewSubtask(e.target.value)} placeholder="Add a step" className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"/><button disabled={isAdding||!newSubtask.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50"><Plus size={16}/><span className="hidden sm:inline">Add step</span></button></form>
+    </section>
+    <Modal open={editing} onClose={()=>setEditing(false)} title="Edit task"><TaskForm initialData={task} onDone={()=>setEditing(false)}/></Modal>
+  </div>;
+};
+
+export default TaskDetail;

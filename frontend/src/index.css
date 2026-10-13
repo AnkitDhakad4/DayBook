@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+:root { color-scheme: light; --page:#f7f8f6; --surface:#fff; --surface-muted:#f1f3f1; --border:#e5e9e5; --ink:#202a28; --muted:#78827f; --accent:#397e72; --accent-soft:#e6f1ee; --danger:#a54848; --danger-soft:#fbebea; --warning:#a36b22; --warning-soft:#fbf1df; --success:#397e61; --success-soft:#e8f3ec; }
+.dark { color-scheme:dark; --page:#171d1c; --surface:#202826; --surface-muted:#29322f; --border:#35413d; --ink:#e8eeeb; --muted:#a5b0ab; --accent:#80b9aa; --accent-soft:#263d37; --danger:#e59a96; --danger-soft:#422c2b; --warning:#e3b56f; --warning-soft:#403522; --success:#8ac5a2; --success-soft:#263b30; }
+@theme inline { --font-sans:'Inter',sans-serif; --font-heading:'Plus Jakarta Sans',sans-serif; --color-page:var(--page); --color-surface:var(--surface); --color-surface-muted:var(--surface-muted); --color-border:var(--border); --color-ink:var(--ink); --color-muted:var(--muted); --color-accent:var(--accent); --color-accent-soft:var(--accent-soft); --color-danger:var(--danger); --color-danger-soft:var(--danger-soft); --color-warning:var(--warning); --color-warning-soft:var(--warning-soft); --color-success:var(--success); --color-success-soft:var(--success-soft); }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+button,input,select,textarea { font:inherit; }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline:3px solid color-mix(in srgb,var(--accent) 48%,transparent); outline-offset:2px; }
