@@ -1,6 +1,7 @@
 import sql from '../db/postgres.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
+import getUserProject from '../utils/getUserProject.js';
 
 const statuses = ['todo', 'in_progress', 'done'];
 const priorities = ['low', 'medium', 'high'];
@@ -23,19 +24,23 @@ const includeSubtasks = async (tasks) => {
 
 export const getTasks = async (req, res, next) => {
   try {
-    const { status, priority, search, sortBy = 'created_at', order = 'desc' } = req.query;
+    const { status, priority, search, project_id, sortBy = 'created_at', order = 'desc' } = req.query;
     if (status && !statuses.includes(status)) throw new ApiError(400, 'Invalid status');
     if (priority && !priorities.includes(priority)) throw new ApiError(400, 'Invalid priority');
     if (!['due_date', 'created_at', 'priority'].includes(sortBy)) throw new ApiError(400, 'Invalid sortBy');
     if (!['asc', 'desc'].includes(order)) throw new ApiError(400, 'Invalid order');
+    if (project_id && project_id !== 'none') await getUserProject(project_id, req.user.id);
 
     let where = sql`user_id = ${req.user.id}`;
     if (status) where = sql`${where} AND status = ${status}`;
     if (priority) where = sql`${where} AND priority = ${priority}`;
     if (search) where = sql`${where} AND title ILIKE ${`%${search}%`}`;
+    if (project_id === 'none') where = sql`${where} AND project_id IS NULL`;
+    else if (project_id) where = sql`${where} AND project_id = ${project_id}`;
     const tasks = await sql`
-      SELECT * FROM tasks WHERE ${where}
-      ORDER BY ${sql(sortBy)} ${order === 'asc' ? sql`ASC` : sql`DESC`} NULLS LAST
+      SELECT tasks.*, projects.name AS project_name, projects.color AS project_color
+      FROM tasks LEFT JOIN projects ON projects.id = tasks.project_id WHERE ${where}
+      ORDER BY ${sql(`tasks.${sortBy}`)} ${order === 'asc' ? sql`ASC` : sql`DESC`} NULLS LAST
     `;
     const data = await includeSubtasks(tasks);
     res.status(200).json(new ApiResponse(200, data, 'Tasks fetched successfully'));
@@ -44,25 +49,26 @@ export const getTasks = async (req, res, next) => {
 
 export const createTask = async (req, res, next) => {
   try {
-    const { title, description = null, priority = 'medium', status = 'todo', due_date = null, progress = 0 } = req.body;
+    const { title, description = null, priority = 'medium', status = 'todo', due_date = null, progress = 0, project_id = null } = req.body;
     if (!title?.trim()) throw new ApiError(400, 'Title is required');
     if (!priorities.includes(priority)) throw new ApiError(400, 'Invalid priority');
     if (!statuses.includes(status)) throw new ApiError(400, 'Invalid status');
     if (!Number.isInteger(progress) || progress < 0 || progress > 100) throw new ApiError(400, 'Progress must be an integer from 0 to 100');
+    if (project_id !== null) await getUserProject(project_id, req.user.id);
 
     const [task] = await sql`
-      INSERT INTO tasks (user_id, title, description, priority, status, due_date, progress)
-      VALUES (${req.user.id}, ${title.trim()}, ${description}, ${priority}, ${status}, ${due_date}, ${status === 'done' ? 100 : progress})
+      INSERT INTO tasks (user_id, title, description, priority, status, due_date, progress, project_id)
+      VALUES (${req.user.id}, ${title.trim()}, ${description}, ${priority}, ${status}, ${due_date}, ${status === 'done' ? 100 : progress}, ${project_id})
       RETURNING *
     `;
-    const [data] = await includeSubtasks([task]);
+    const [data] = await includeSubtasks(await sql`SELECT tasks.*, projects.name AS project_name, projects.color AS project_color FROM tasks LEFT JOIN projects ON projects.id = tasks.project_id WHERE tasks.id = ${task.id}`);
     res.status(201).json(new ApiResponse(201, data, 'Task created successfully'));
   } catch (error) { passError(error, next); }
 };
 
 export const getTask = async (req, res, next) => {
   try {
-    const [task] = await sql`SELECT * FROM tasks WHERE id = ${req.params.id} AND user_id = ${req.user.id} LIMIT 1`;
+    const [task] = await sql`SELECT tasks.*, projects.name AS project_name, projects.color AS project_color FROM tasks LEFT JOIN projects ON projects.id = tasks.project_id WHERE tasks.id = ${req.params.id} AND tasks.user_id = ${req.user.id} LIMIT 1`;
     if (!task) throw new ApiError(404, 'Task not found');
     const [data] = await includeSubtasks([task]);
     res.status(200).json(new ApiResponse(200, data, 'Task fetched successfully'));
@@ -71,13 +77,14 @@ export const getTask = async (req, res, next) => {
 
 export const updateTask = async (req, res, next) => {
   try {
-    const allowedFields = ['title', 'description', 'priority', 'status', 'progress', 'due_date'];
+    const allowedFields = ['title', 'description', 'priority', 'status', 'progress', 'due_date', 'project_id'];
     const updates = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowedFields.includes(key)));
     if (!Object.keys(updates).length) throw new ApiError(400, 'No valid fields to update');
     if (updates.title !== undefined && !updates.title?.trim()) throw new ApiError(400, 'Title cannot be empty');
     if (updates.priority !== undefined && !priorities.includes(updates.priority)) throw new ApiError(400, 'Invalid priority');
     if (updates.status !== undefined && !statuses.includes(updates.status)) throw new ApiError(400, 'Invalid status');
     if (updates.progress !== undefined && (!Number.isInteger(updates.progress) || updates.progress < 0 || updates.progress > 100)) throw new ApiError(400, 'Progress must be an integer from 0 to 100');
+    if (updates.project_id !== undefined && updates.project_id !== null) await getUserProject(updates.project_id, req.user.id);
     if (updates.title) updates.title = updates.title.trim();
     if (updates.status === 'done') updates.progress = 100;
     updates.updated_at = new Date();
@@ -87,7 +94,7 @@ export const updateTask = async (req, res, next) => {
       RETURNING *
     `;
     if (!task) throw new ApiError(404, 'Task not found');
-    const [data] = await includeSubtasks([task]);
+    const [data] = await includeSubtasks(await sql`SELECT tasks.*, projects.name AS project_name, projects.color AS project_color FROM tasks LEFT JOIN projects ON projects.id = tasks.project_id WHERE tasks.id = ${task.id}`);
     res.status(200).json(new ApiResponse(200, data, 'Task updated successfully'));
   } catch (error) { passError(error, next); }
 };

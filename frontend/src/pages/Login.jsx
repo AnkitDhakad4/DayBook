@@ -35,7 +35,7 @@ const Login = () => {
     }
   };
   return (
-    <main className="grid min-h-screen place-items-center bg-page px-4 py-10">
+    <main className="grid h-screen place-items-center bg-page px-4 py-10">
       <section className="w-full max-w-md rounded-2xl border border-border bg-surface p-7 shadow-sm sm:p-9">
         <Link
           to="/login"
@@ -44,7 +44,7 @@ const Login = () => {
           <span className="grid size-9 place-items-center rounded-xl bg-accent text-white">
             <CheckSquare2 size={19} />
           </span>
-          Taskly
+          DayBook
         </Link>
         <p className="text-sm font-semibold text-accent">
           A little more progress
@@ -78,11 +78,11 @@ const Login = () => {
               placeholder="Your password"
             />
           </label>
-          {error && (
+          {/* {error && (
             <p role="alert" className="text-sm text-danger">
               {error}
             </p>
-          )}
+          )} */}
           <button
             disabled={isSaving}
             className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
@@ -91,7 +91,7 @@ const Login = () => {
           </button>
         </form>
         <p className="mt-6 text-center text-sm text-muted">
-          New to Taskly?{" "}
+          New to DayBook?{" "}
           <Link
             to="/register"
             className="font-semibold text-accent hover:underline"

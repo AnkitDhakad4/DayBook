@@ -1,4 +1,4 @@
-# Taskly backend
+# DayBook backend
 
 ## Setup
 
@@ -20,9 +20,13 @@ The backend connects directly to PostgreSQL with the `postgres` package. Keep th
 | GET | `/api/v1/auth/me` | Yes | Get the signed-in user |
 | GET, POST | `/api/v1/tasks` | Yes | List or create tasks |
 | GET, PATCH, DELETE | `/api/v1/tasks/:id` | Yes | Read, update, or delete a task |
+| GET, POST | `/api/v1/projects` | Yes | List or create projects |
+| GET, PATCH, DELETE | `/api/v1/projects/:id` | Yes | Read, update, or delete a project and its tasks |
 | POST | `/api/v1/tasks/:taskId/subtasks` | Yes | Add a subtask |
 | PATCH, DELETE | `/api/v1/tasks/:taskId/subtasks/:subtaskId` | Yes | Update or delete a subtask |
 | GET | `/api/v1/stats` | Yes | Get task progress statistics |
+
+The projects schema is included in `schema.sql` for a fresh database. For an existing database, run `migration_002_projects.sql` before starting the backend.
 
 ## Try registration and login
 

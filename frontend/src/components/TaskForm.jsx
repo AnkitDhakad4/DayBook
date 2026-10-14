@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTaskStore } from "../store/useTaskStore.js";
+import { useProjectStore } from "../store/useProjectStore.js";
 
 const fieldClass =
   "mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-accent";
 
-const TaskForm = ({ initialData, onDone }) => {
+const TaskForm = ({ initialData, onDone, fixedProjectId }) => {
   const createTask = useTaskStore((state) => state.createTask);
   const updateTask = useTaskStore((state) => state.updateTask);
+  const projects = useProjectStore((state) => state.projects);
+  const fetchProjects = useProjectStore((state) => state.fetchProjects);
+  useEffect(() => { if (!projects.length) fetchProjects(); }, [fetchProjects, projects.length]);
   const [form, setForm] = useState({
     title: initialData?.title || "",
     description: initialData?.description || "",
     priority: initialData?.priority || "medium",
     status: initialData?.status || "todo",
     due_date: initialData?.due_date || "",
+    project_id: initialData?.project_id || fixedProjectId || "",
   });
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -35,6 +40,7 @@ const TaskForm = ({ initialData, onDone }) => {
         title: form.title.trim(),
         description: form.description.trim() || null,
         due_date: form.due_date || null,
+        project_id: fixedProjectId || form.project_id || null,
       };
       if (initialData?.id) await updateTask(initialData.id, payload);
       else await createTask(payload);
@@ -61,6 +67,7 @@ const TaskForm = ({ initialData, onDone }) => {
           maxLength="180"
         />
       </label>
+      {!fixedProjectId && <label className="block text-sm font-medium">Project<select name="project_id" value={form.project_id} onChange={updateField} className={fieldClass}><option value="">No project</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>}
       <label className="block text-sm font-medium">
         A few details <span className="font-normal text-muted">(optional)</span>
         <textarea

@@ -1,0 +1,21 @@
+services:
+  server:
+    build: ./backend
+    container_name: DayBook_server
+    ports:
+      - '1000:5000'
+    networks:
+      - DayBook
+  
+  client:
+    build: ./frontend
+    container_name: DayBook_client
+    ports:
+      - '1001:3000'
+    
+    networks:
+      - DayBook
+
+networks:
+  DayBook:
+    driver: bridge

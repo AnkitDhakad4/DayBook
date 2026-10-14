@@ -5,7 +5,7 @@ import api from '../lib/api.js';
 const showError = (error, fallback) => toast.error(error.response?.data?.message || fallback);
 
 export const useTaskStore = create((set, get) => ({
-  tasks: [], currentTask: null, filters: { status:'', priority:'', search:'', sortBy:'created_at', order:'desc' }, isLoading: false,
+  tasks: [], currentTask: null, filters: { status:'', priority:'', search:'', sortBy:'created_at', order:'desc', project_id:'' }, isLoading: false,
   fetchTasks: async () => {
     set({ isLoading:true });
     try { const response = await api.get('/tasks', { params:get().filters }); set({ tasks:response.data.data || [], isLoading:false }); }

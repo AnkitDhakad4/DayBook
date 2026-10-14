@@ -20,9 +20,9 @@ const TaskRow = ({ task }) => {
   return (
     <Link
       to={`/tasks/${task.id}`}
-      className="grid gap-3 rounded-xl border border-border bg-surface p-4 transition hover:border-accent/50 hover:shadow-sm sm:grid-cols-[minmax(180px,1.5fr)_100px_130px_minmax(130px,1fr)_20px] sm:items-center"
+      className="grid min-w-0 gap-3 rounded-xl border border-border bg-surface p-4 transition hover:border-accent/50 hover:shadow-sm md:grid-cols-[minmax(0,1.5fr)_80px_110px_minmax(0,1fr)_16px] md:items-center"
     >
-      <span className="min-w-0 truncate font-semibold">{task.title}</span>
+      <span className="min-w-0"><span className="block truncate font-semibold">{task.title}</span>{task.project_id && <span className="mt-1 flex items-center gap-1.5 truncate text-xs font-normal text-muted"><span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: task.project_color || '#0d9488' }} />{task.project_name || 'Project'}</span>}</span>
       <span
         className={`w-fit rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${task.priority === "high" ? "bg-danger-soft text-danger" : task.priority === "medium" ? "bg-warning-soft text-warning" : "bg-surface-muted text-muted"}`}
       >
@@ -52,7 +52,7 @@ const TaskRow = ({ task }) => {
           <ProgressBar value={task.progress || 0} />
         </div>
       </div>
-      <ChevronRight size={17} className="hidden text-muted sm:block" />
+      <ChevronRight size={17} className="hidden text-muted md:block" />
     </Link>
   );
 };

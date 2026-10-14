@@ -12,6 +12,8 @@ import Tasks from "./pages/Tasks.jsx";
 import Board from "./pages/Board.jsx";
 import TaskDetail from "./pages/TaskDetail.jsx";
 import Settings from "./pages/Settings.jsx";
+import Projects from "./pages/Projects.jsx";
+import ProjectDetail from "./pages/ProjectDetail.jsx";
 
 const CenterLoader = () => (
   <div className="grid min-h-screen place-items-center bg-page">
@@ -27,6 +29,7 @@ const NotFound = () => (
       <span className="mx-auto grid size-12 place-items-center rounded-xl bg-accent-soft text-accent">
         <CheckSquare2 size={22} />
       </span>
+      <p className="mt-3 font-heading font-bold">DayBook</p>
       <h1 className="mt-5 font-heading text-2xl font-bold">
         This page wandered off
       </h1>
@@ -77,6 +80,8 @@ const App = () => {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/board" element={<Board />} />
           <Route path="/tasks/:id" element={<TaskDetail />} />
           <Route path="/settings" element={<Settings />} />
